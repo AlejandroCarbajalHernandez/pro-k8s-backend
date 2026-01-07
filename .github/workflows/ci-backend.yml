@@ -1,0 +1,39 @@
+name: Backend CI & Security Scan
+
+on: [push]
+
+jobs:
+  quality-and-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 1. Linting para código limpio
+      - name: Run Flake8
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      # 2. SAST: Seguridad en el código Python
+      - name: Security Scan with Bandit
+        run: |
+          pip install bandit
+          bandit -r ./backend
+
+      # 3. Construcción de imagen
+      - name: Build Docker Image
+        run: docker build -t pro-app:latest ./backend
+
+      # 4. Escaneo de vulnerabilidades de la imagen (Critical/High)
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pro-app:latest'
+          format: 'table'
+          exit-code: '1' # Hace que el pipeline falle si hay fallos graves
+          severity: 'CRITICAL,HIGH'

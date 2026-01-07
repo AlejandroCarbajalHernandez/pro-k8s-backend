@@ -1,0 +1,21 @@
+services:
+  # Simulación de AWS RDS
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user_admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: analytics_db
+    ports:
+      - "5432:5432"
+
+  # Tu aplicación Python
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Así es como el backend sabe dónde está la DB en Docker
+      DATABASE_URL: postgresql://user_admin:password123@db:5432/analytics_db
+    depends_on:
+      - db
