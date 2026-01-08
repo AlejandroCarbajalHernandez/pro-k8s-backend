@@ -1,21 +1,26 @@
 services:
-  # Simulación de AWS RDS
+  # Simula AWS RDS
   db:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: user_admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: password123_pro
       POSTGRES_DB: analytics_db
     ports:
       - "5432:5432"
+    healthcheck: # Esto es pro: asegura que la DB esté lista antes que la App
+      test: ["CMD-SHELL", "pg_isready -U user_admin -d analytics_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Tu aplicación Python
+  # Tu App Python (EKS Pod)
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      # Así es como el backend sabe dónde está la DB en Docker
-      DATABASE_URL: postgresql://user_admin:password123@db:5432/analytics_db
+      DATABASE_URL: postgresql://user_admin:password123_pro@db:5432/analytics_db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
