@@ -1,23 +1,26 @@
+# 1. Imagen base ultra-ligera y segura
 FROM python:3.11-alpine
 
-# 1. Directorio de trabajo
+# 2. Directorio de trabajo
 WORKDIR /app
 
-# 2. Instalamos dependencias del sistema necesarias para PostgreSQL y compilación
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
+# 3. Instalamos dependencias del sistema usando 'apk' (propio de Alpine)
+# musl-dev y postgresql-dev son necesarios para compilar drivers de DB en Python
+RUN apk add --no-cache \
+    postgresql-dev \
     gcc \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    libpq-dev
 
-# 3. Instalamos las librerías de Python directamente
+# 4. Instalamos librerías de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Copiamos el código de la app
+# 5. Copiamos el resto de la aplicación
 COPY . .
 
-# 5. Exponemos el puerto
+# 6. Exponemos el puerto de FastAPI
 EXPOSE 8000
 
-# 6. Comando de ejecución (usando la ruta directa de python)
+# 7. Comando de ejecución profesional
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
