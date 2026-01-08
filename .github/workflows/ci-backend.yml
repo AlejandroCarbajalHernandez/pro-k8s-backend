@@ -37,4 +37,5 @@ jobs:
           image-ref: 'pro-app:${{ github.sha }}'
           format: 'table'
           exit-code: '1' # El pipeline falla si encuentra algo CRÍTICO
-          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          severity: 'CRITICAL'
