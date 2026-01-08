@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.11-alpine
 
 # 1. Directorio de trabajo
 WORKDIR /app
