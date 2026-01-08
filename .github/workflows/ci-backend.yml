@@ -1,39 +1,40 @@
-name: Backend CI & Security Scan
+name: Backend Quality & Security
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  quality-and-security:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      # 1. Linting para código limpio
-      - name: Run Flake8
+      # 1. Calidad de Código (Linting)
+      - name: Lint with Flake8
         run: |
           pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Detiene la ejecución si hay errores de sintaxis o variables no definidas
+          flake8 ./backend --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      # 2. SAST: Seguridad en el código Python
-      - name: Security Scan with Bandit
+      # 2. Seguridad del Código (SAST)
+      - name: Security scan with Bandit
         run: |
           pip install bandit
-          bandit -r ./backend
+          bandit -r ./backend/app -ll
 
-      # 3. Construcción de imagen
+      # 3. Construcción de la Imagen (Check de Build)
       - name: Build Docker Image
-        run: docker build -t pro-app:latest ./backend
+        run: |
+          docker build -t pro-app:${{ github.sha }} ./backend
 
-      # 4. Escaneo de vulnerabilidades de la imagen (Critical/High)
-      - name: Trivy Image Scan
+      # 4. Escaneo de Vulnerabilidades en la Imagen (Trivy)
+      - name: Container Image Scan (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pro-app:latest'
+          image-ref: 'pro-app:${{ github.sha }}'
           format: 'table'
-          exit-code: '1' # Hace que el pipeline falle si hay fallos graves
+          exit-code: '1' # El pipeline falla si encuentra algo CRÍTICO
           severity: 'CRITICAL,HIGH'
